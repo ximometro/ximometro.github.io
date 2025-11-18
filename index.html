@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ximometro.io 🔋</title>
+    <!-- INCLUIR FIREBASE -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            text-align: center;
+        }
+
+        .header {
+            margin-bottom: 20px;
+        }
+
+        .logo {
+            font-size: 2.5em;
+            margin: 0;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .tagline {
+            opacity: 0.9;
+            margin-top: -5px;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            max-width: 400px;
+            width: 100%;
+        }
+
+        .battery-section {
+            display: flex;
+            align-items: center;
+            gap: 30px;
+            margin: 20px 0;
+        }
+
+        .battery-container {
+            position: relative;
+            width: 100px;
+            height: 250px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            border: 3px solid white;
+            overflow: hidden;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.3);
+        }
+
+        .battery-level {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            background: linear-gradient(to top, #ff4444, #ffaa00, #ffff00, #88ff00);
+            height: 50%;
+            transition: height 1s ease;
+        }
+
+        .battery-percent {
+            position: absolute;
+            top: -35px;
+            width: 100%;
+            text-align: center;
+            font-size: 1.3em;
+            font-weight: bold;
+        }
+
+        .face-track {
+            position: relative;
+            width: 100px;
+            height: 250px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            border: 2px dashed rgba(255,255,255,0.3);
+        }
+
+        .custom-face {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: transparent;
+            border: 3px solid gold;
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            transition: top 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            cursor: grab;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .custom-face:active {
+            cursor: grabbing;
+        }
+
+        .custom-face img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
+        }
+
+        .default-face {
+            font-size: 40px;
+            filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.3));
+        }
+
+        .status-display {
+            font-size: 1.3em;
+            font-weight: bold;
+            margin: 15px 0;
+            min-height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .battery-icon {
+            font-size: 2em;
+            margin: 10px 0;
+        }
+
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            width: 100%;
+            max-width: 300px;
+            margin: 10px 0;
+        }
+
+        button {
+            padding: 12px;
+            font-size: 0.9em;
+            border: none;
+            border-radius: 15px;
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+        }
+
+        button:hover {
+            background: white;
+            transform: translateY(-2px);
+        }
+
+        .upload-section {
+            margin: 15px 0;
+        }
+
+        .upload-btn {
+            background: rgba(76, 175, 80, 0.8);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 15px;
+            cursor: pointer;
+            display: inline-block;
+            transition: all 0.3s ease;
+            font-size: 0.9em;
+        }
+
+        .upload-btn:hover {
+            background: rgba(76, 175, 80, 1);
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .manual-controls {
+            display: flex;
+            gap: 10px;
+            margin: 10px 0;
+        }
+
+        .manual-btn {
+            background: rgba(255, 193, 7, 0.8);
+            color: #333;
+            padding: 8px 12px;
+            border-radius: 10px;
+            font-size: 0.8em;
+        }
+
+        .sync-status {
+            font-size: 0.8em;
+            opacity: 0.7;
+            margin-top: 5px;
+        }
+
+        .emoji-options {
+            display: flex;
+            gap: 10px;
+            margin: 10px 0;
+        }
+
+        .emoji-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .emoji-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.1);
+        }
+
+        @media (max-width: 480px) {
+            .battery-section {
+                gap: 20px;
+            }
+            
+            .battery-container, .face-track {
+                width: 80px;
+                height: 200px;
+            }
+            
+            .custom-face {
+                width: 60px;
+                height: 60px;
+            }
+            
+            .logo {
+                font-size: 2em;
+            }
+            
+            .emoji-btn {
+                width: 45px;
+                height: 45px;
+                font-size: 1.3em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1 class="logo">🔋 Ximometro.io</h1>
+        <p class="tagline">Midiendo tu presencia especial ✨</p>
+        <div class="sync-status" id="syncStatus">🟡 Conectando...</div>
+    </div>
+    
+    <div class="container">
+        <div class="battery-section">
+            <div class="battery-container">
+                <div class="battery-percent" id="batteryPercent">50%</div>
+                <div class="battery-level" id="batteryLevel"></div>
+            </div>
+
+            <div class="face-track" id="faceTrack">
+                <div class="custom-face" id="customFace" style="top: 125px;">
+                    <div class="default-face">👩🏻🥷🏻</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="battery-icon" id="batteryIcon">🔋</div>
+
+        <div class="status-display" id="status">
+            Ximena está: Conectada 💫
+        </div>
+
+        <div class="upload-section">
+            <label for="faceUpload" class="upload-btn">
+                📸 Subir PNG de Ximena
+            </label>
+            <input type="file" id="faceUpload" accept="image/*">
+            <div class="sync-status">(Solo tú ves esta imagen)</div>
+        </div>
+
+        <div class="emoji-options">
+            <div class="emoji-btn" onclick="setEmoji('👩🏻🥷🏻')">👩🏻🥷🏻</div>
+            <div class="emoji-btn" onclick="setEmoji('👩🏻')">👩🏻</div>
+            <div class="emoji-btn" onclick="setEmoji('🥷🏻')">🥷🏻</div>
+            <div class="emoji-btn" onclick="setEmoji('👑')">👑</div>
+            <div class="emoji-btn" onclick="setEmoji('😊')">😊</div>
+        </div>
+
+        <div class="manual-controls">
+            <button class="manual-btn" onclick="adjustFace(-10)">⬆️ Subir Cara</button>
+            <button class="manual-btn" onclick="adjustFace(10)">⬇️ Bajar Cara</button>
+        </div>
+
+        <div class="controls">
+            <button onclick="setBattery(100)">🔋 Llena</button>
+            <button onclick="setBattery(75)">⚡ Alta</button>
+            <button onclick="setBattery(50)">🔌 Media</button>
+            <button onclick="setBattery(25)">🪫 Baja</button>
+            <button onclick="setBattery(0)">❌ Ausente</button>
+        </div>
+        
+        <div class="sync-status">
+            Última actualización: <span id="lastUpdate">Cargando...</span>
+        </div>
+    </div>
+
+    <script>
+        // =============================================
+        // CONFIGURACIÓN DE FIREBASE - ACTUALIZADA CON TUS DATOS REALES
+        // =============================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyC9SZzsrV-xYwQsREScGt0sT6VSK6mPhVw",
+            authDomain: "ximometro1.firebaseapp.com",
+            databaseURL: "https://ximometro1-default-rtdb.firebaseio.com",
+            projectId: "ximometro1",
+            storageBucket: "ximometro1.firebasestorage.app",
+            messagingSenderId: "417707299028",
+            appId: "1:417707299028:web:7f317639f4f137fd45eb41"
+        };
+
+        // Inicializar Firebase
+        let database;
+        try {
+            firebase.initializeApp(firebaseConfig);
+            database = firebase.database();
+            console.log("Firebase conectado correctamente");
+        } catch (error) {
+            console.log("Error Firebase:", error);
+        }
+
+        const batteryLevel = document.getElementById('batteryLevel');
+        const batteryPercent = document.getElementById('batteryPercent');
+        const batteryIcon = document.getElementById('batteryIcon');
+        const statusText = document.getElementById('status');
+        const customFace = document.getElementById('customFace');
+        const faceUpload = document.getElementById('faceUpload');
+        const faceTrack = document.getElementById('faceTrack');
+        const syncStatus = document.getElementById('syncStatus');
+        const lastUpdate = document.getElementById('lastUpdate');
+
+        let currentBatteryLevel = 50;
+        let facePosition = 125;
+        let isSyncing = false;
+
+        // =============================================
+        // SINCRONIZACIÓN CON FIREBASE
+        // =============================================
+
+        function saveToDatabase(batteryLevel, facePosition) {
+            if (!database) {
+                syncStatus.textContent = "🟡 Modo local - Sin sincronización";
+                return;
+            }
+
+            isSyncing = true;
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('es-MX', { 
+                hour: '2-digit', 
+                minute: '2-digit',
+                second: '2-digit'
+            });
+
+            const data = {
+                battery: batteryLevel,
+                facePosition: Math.round(facePosition),
+                lastUpdated: timeString,
+                timestamp: now.getTime()
+            };
+            
+            database.ref('ximometro/status').set(data)
+                .then(() => {
+                    syncStatus.textContent = "🟢 Sincronizado - Todos ven los cambios";
+                    syncStatus.style.color = "#90EE90";
+                    lastUpdate.textContent = timeString;
+                })
+                .catch((error) => {
+                    syncStatus.textContent = "🔴 Error al sincronizar";
+                    syncStatus.style.color = "#FF6B6B";
+                    console.error("Error Firebase:", error);
+                })
+                .finally(() => {
+                    isSyncing = false;
+                });
+        }
+
+        function loadFromDatabase() {
+            if (!database) {
+                syncStatus.textContent = "🟡 Modo local - Los cambios son privados";
+                return;
+            }
+            
+            database.ref('ximometro/status').on('value', (snapshot) => {
+                const data = snapshot.val();
+                if (data && !isSyncing) {
+                    currentBatteryLevel = data.battery || 50;
+                    facePosition = data.facePosition || 125;
+                    
+                    updateDisplay();
+                    lastUpdate.textContent = data.lastUpdated || "Ahora";
+                    
+                    syncStatus.textContent = "🟢 Sincronizado en tiempo real";
+                    syncStatus.style.color = "#90EE90";
+                }
+            }, (error) => {
+                syncStatus.textContent = "🔴 Error de conexión";
+                syncStatus.style.color = "#FF6B6B";
+            });
+        }
+
+        // =============================================
+        // FUNCIONES PRINCIPALES
+        // =============================================
+
+        function setBattery(percentage) {
+            currentBatteryLevel = percentage;
+            updateDisplay();
+            saveToDatabase(currentBatteryLevel, facePosition);
+        }
+
+        function updateDisplay() {
+            batteryLevel.style.height = currentBatteryLevel + '%';
+            batteryPercent.textContent = currentBatteryLevel + '%';
+            updateBatteryIcon(currentBatteryLevel);
+            updateStatus(currentBatteryLevel);
+            moveFaceWithBattery(currentBatteryLevel);
+        }
+
+        function moveFaceWithBattery(percentage) {
+            const trackHeight = faceTrack.offsetHeight;
+            const faceHeight = customFace.offsetHeight;
+            const maxPosition = trackHeight - faceHeight;
+            facePosition = maxPosition - (percentage / 100) * maxPosition;
+            customFace.style.top = facePosition + 'px';
+        }
+
+        function adjustFace(change) {
+            const trackHeight = faceTrack.offsetHeight;
+            const faceHeight = customFace.offsetHeight;
+            const maxPosition = trackHeight - faceHeight;
+            
+            facePosition += change;
+            
+            if (facePosition < 0) facePosition = 0;
+            if (facePosition > maxPosition) facePosition = maxPosition;
+            
+            customFace.style.top = facePosition + 'px';
+            
+            const calculatedBattery = 100 - Math.round((facePosition / maxPosition) * 100);
+            currentBatteryLevel = calculatedBattery;
+            updateDisplay();
+            saveToDatabase(currentBatteryLevel, facePosition);
+        }
+
+        function updateBatteryIcon(percentage) {
+            let icon, color;
+            
+            if (percentage >= 80) {
+                icon = '🔋';
+                color = 'linear-gradient(to top, #00ff00, #88ff00)';
+            } else if (percentage >= 60) {
+                icon = '🔋';
+                color = 'linear-gradient(to top, #aaff00, #ffff00)';
+            } else if (percentage >= 40) {
+                icon = '🔋';
+                color = 'linear-gradient(to top, #ffff00, #ffaa00)';
+            } else if (percentage >= 20) {
+                icon = '🪫';
+                color = 'linear-gradient(to top, #ffaa00, #ff4444)';
+            } else {
+                icon = '🪫';
+                color = 'linear-gradient(to top, #ff4444, #cc0000)';
+            }
+            
+            batteryIcon.textContent = icon;
+            batteryLevel.style.background = color;
+        }
+
+        function updateStatus(percentage) {
+            let status, emoji;
+            
+            if (percentage >= 80) {
+                status = "¡Presente al máximo! 🎯";
+                emoji = "🌟";
+            } else if (percentage >= 60) {
+                status = "Buen nivel de presencia ✨";
+                emoji = "⭐";
+            } else if (percentage >= 40) {
+                status = "Presencia moderada 💫";
+                emoji = "🌀";
+            } else if (percentage >= 20) {
+                status = "Poca presencia 📉";
+                emoji = "🌫️";
+            } else {
+                status = "Ausente 💤";
+                emoji = "😴";
+            }
+            
+            statusText.innerHTML = `Ximena está: <br><strong>${status}</strong> ${emoji}`;
+        }
+
+        // =============================================
+        // PERSONALIZACIÓN DE EMOJIS
+        // =============================================
+
+        function setEmoji(emoji) {
+            customFace.innerHTML = `<div class="default-face">${emoji}</div>`;
+            // Guardar en localStorage
+            localStorage.setItem('selectedEmoji', emoji);
+            // Limpiar imagen si había una
+            localStorage.removeItem('ximenaFace');
+        }
+
+        // =============================================
+        // EVENT LISTENERS Y ARRASTRE
+        // =============================================
+
+        faceUpload.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    customFace.innerHTML = `<img src="${e.target.result}" alt="Ximena">`;
+                    // Guardar solo localmente
+                    localStorage.setItem('ximenaFace', e.target.result);
+                    // Limpiar emoji guardado
+                    localStorage.removeItem('selectedEmoji');
+                }
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Cargar al iniciar
+        window.addEventListener('load', function() {
+            // Primero intentar cargar imagen
+            const savedFace = localStorage.getItem('ximenaFace');
+            if (savedFace) {
+                customFace.innerHTML = `<img src="${savedFace}" alt="Ximena">`;
+            } else {
+                // Si no hay imagen, cargar emoji guardado
+                const savedEmoji = localStorage.getItem('selectedEmoji') || '👩🏻🥷🏻';
+                customFace.innerHTML = `<div class="default-face">${savedEmoji}</div>`;
+            }
+            
+            // Cargar datos de Firebase
+            loadFromDatabase();
+        });
+
+        // Sistema de arrastre
+        let isDragging = false;
+        
+        customFace.addEventListener('mousedown', startDrag);
+        customFace.addEventListener('touchstart', startDrag);
+        
+        function startDrag(e) {
+            isDragging = true;
+            e.preventDefault();
+        }
+        
+        document.addEventListener('mousemove', dragFace);
+        document.addEventListener('touchmove', dragFace);
+        
+        document.addEventListener('mouseup', stopDrag);
+        document.addEventListener('touchend', stopDrag);
+        
+        function dragFace(e) {
+            if (!isDragging) return;
+            
+            const trackRect = faceTrack.getBoundingClientRect();
+            let clientY;
+            
+            if (e.type === 'touchmove') {
+                clientY = e.touches[0].clientY;
+            } else {
+                clientY = e.clientY;
+            }
+            
+            const newPosition = clientY - trackRect.top - (customFace.offsetHeight / 2);
+            const maxPosition = trackRect.height - customFace.offsetHeight;
+            
+            if (newPosition >= 0 && newPosition <= maxPosition) {
+                facePosition = newPosition;
+                customFace.style.top = facePosition + 'px';
+                
+                const calculatedBattery = 100 - Math.round((facePosition / maxPosition) * 100);
+                currentBatteryLevel = calculatedBattery;
+                updateDisplay();
+                saveToDatabase(currentBatteryLevel, facePosition);
+            }
+        }
+        
+        function stopDrag() {
+            isDragging = false;
+        }
+
+        // Inicializar
+        updateDisplay();
+    </script>
+</body>
+</html>
