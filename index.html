@@ -411,7 +411,8 @@
             database.ref('ximometro/status').on('value', (snapshot) => {
                 const data = snapshot.val();
                 if (data && !isSyncing) {
-                    currentBatteryLevel = data.battery || 50;
+                    // CORRECCIÓN: Cambié 50 por 0 para que mantenga el "Ausente"
+                    currentBatteryLevel = data.battery || 0;  // ← AQUÍ ESTÁ LA CORRECCIÓN
                     facePosition = data.facePosition || 125;
                     
                     updateDisplay();
