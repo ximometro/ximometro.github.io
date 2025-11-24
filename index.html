@@ -325,7 +325,7 @@
 
     <script>
         // =============================================
-        // CONFIGURACIÓN DE FIREBASE - ACTUALIZADA CON TUS DATOS REALES
+        // CONFIGURACIÓN DE FIREBASE
         // =============================================
         const firebaseConfig = {
             apiKey: "AIzaSyC9SZzsrV-xYwQsREScGt0sT6VSK6mPhVw",
@@ -386,7 +386,7 @@
                 timestamp: now.getTime()
             };
             
-            database.ref('ximometro/status').set(data)
+            database.ref('ximometro/ximena/status').set(data)
                 .then(() => {
                     syncStatus.textContent = "🟢 Sincronizado - Todos ven los cambios";
                     syncStatus.style.color = "#90EE90";
@@ -408,11 +408,10 @@
                 return;
             }
             
-            database.ref('ximometro/status').on('value', (snapshot) => {
+            database.ref('ximometro/ximena/status').on('value', (snapshot) => {
                 const data = snapshot.val();
                 if (data && !isSyncing) {
-                    // CORRECCIÓN: Cambié 50 por 0 para que mantenga el "Ausente"
-                    currentBatteryLevel = data.battery || 0;  // ← AQUÍ ESTÁ LA CORRECCIÓN
+                    currentBatteryLevel = data.battery || 0;
                     facePosition = data.facePosition || 125;
                     
                     updateDisplay();
@@ -525,9 +524,9 @@
         function setEmoji(emoji) {
             customFace.innerHTML = `<div class="default-face">${emoji}</div>`;
             // Guardar en localStorage
-            localStorage.setItem('selectedEmoji', emoji);
+            localStorage.setItem('ximenaSelectedEmoji', emoji);  // ← CAMBIADO
             // Limpiar imagen si había una
-            localStorage.removeItem('ximenaFace');
+            localStorage.removeItem('ximenaFace');  // ← CAMBIADO
         }
 
         // =============================================
@@ -541,9 +540,9 @@
                 reader.onload = function(e) {
                     customFace.innerHTML = `<img src="${e.target.result}" alt="Ximena">`;
                     // Guardar solo localmente
-                    localStorage.setItem('ximenaFace', e.target.result);
+                    localStorage.setItem('ximenaFace', e.target.result);  // ← CAMBIADO
                     // Limpiar emoji guardado
-                    localStorage.removeItem('selectedEmoji');
+                    localStorage.removeItem('ximenaSelectedEmoji');  // ← CAMBIADO
                 }
                 reader.readAsDataURL(file);
             }
@@ -552,12 +551,12 @@
         // Cargar al iniciar
         window.addEventListener('load', function() {
             // Primero intentar cargar imagen
-            const savedFace = localStorage.getItem('ximenaFace');
+            const savedFace = localStorage.getItem('ximenaFace');  // ← CAMBIADO
             if (savedFace) {
                 customFace.innerHTML = `<img src="${savedFace}" alt="Ximena">`;
             } else {
                 // Si no hay imagen, cargar emoji guardado
-                const savedEmoji = localStorage.getItem('selectedEmoji') || '👩🏻🥷🏻';
+                const savedEmoji = localStorage.getItem('ximenaSelectedEmoji') || '👩🏻🥷🏻';  // ← CAMBIADO
                 customFace.innerHTML = `<div class="default-face">${savedEmoji}</div>`;
             }
             
