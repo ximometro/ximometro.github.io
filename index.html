@@ -428,6 +428,12 @@
  syncStatus.textContent = "🔴 Error de conexión";
  syncStatus.style.color = "#FF6B6B";
  });
+
+ // ← CORRECCIÓN: Cargar imagen del localStorage si existe
+ const savedFace = localStorage.getItem('ximenaFace');
+ if (savedFace && !isSyncing) {
+ customFace.innerHTML = `<img src="${savedFace}" alt="Ximena">`;
+ }
  }
 
  // =============================================
