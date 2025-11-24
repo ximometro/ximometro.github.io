@@ -359,6 +359,7 @@
 
         let currentBatteryLevel = 50;
         let facePosition = 125;
+        let currentEmoji = '👩🏻🥷🏻';  // ← NUEVO: Variable para el emoji actual
         let isSyncing = false;
 
         // =============================================
@@ -382,6 +383,7 @@
             const data = {
                 battery: batteryLevel,
                 facePosition: Math.round(facePosition),
+                selectedEmoji: currentEmoji,  // ← NUEVO: Guardar emoji en Firebase
                 lastUpdated: timeString,
                 timestamp: now.getTime()
             };
@@ -413,8 +415,10 @@
                 if (data && !isSyncing) {
                     currentBatteryLevel = data.battery || 0;
                     facePosition = data.facePosition || 125;
+                    currentEmoji = data.selectedEmoji || '👩🏻🥷🏻';  // ← NUEVO: Cargar emoji desde Firebase
                     
                     updateDisplay();
+                    updateFaceEmoji();  // ← NUEVO: Actualizar emoji visual
                     lastUpdate.textContent = data.lastUpdated || "Ahora";
                     
                     syncStatus.textContent = "🟢 Sincronizado en tiempo real";
@@ -442,6 +446,10 @@
             updateBatteryIcon(currentBatteryLevel);
             updateStatus(currentBatteryLevel);
             moveFaceWithBattery(currentBatteryLevel);
+        }
+
+        function updateFaceEmoji() {
+            customFace.innerHTML = `<div class="default-face">${currentEmoji}</div>`;
         }
 
         function moveFaceWithBattery(percentage) {
@@ -522,11 +530,11 @@
         // =============================================
 
         function setEmoji(emoji) {
+            currentEmoji = emoji;  // ← NUEVO: Actualizar variable global
             customFace.innerHTML = `<div class="default-face">${emoji}</div>`;
-            // Guardar en localStorage
-            localStorage.setItem('ximenaSelectedEmoji', emoji);  // ← CAMBIADO
-            // Limpiar imagen si había una
-            localStorage.removeItem('ximenaFace');  // ← CAMBIADO
+            saveToDatabase(currentBatteryLevel, facePosition);  // ← NUEVO: Guardar en Firebase
+            localStorage.setItem('ximenaSelectedEmoji', emoji);
+            localStorage.removeItem('ximenaFace');
         }
 
         // =============================================
@@ -540,9 +548,9 @@
                 reader.onload = function(e) {
                     customFace.innerHTML = `<img src="${e.target.result}" alt="Ximena">`;
                     // Guardar solo localmente
-                    localStorage.setItem('ximenaFace', e.target.result);  // ← CAMBIADO
+                    localStorage.setItem('ximenaFace', e.target.result);
                     // Limpiar emoji guardado
-                    localStorage.removeItem('ximenaSelectedEmoji');  // ← CAMBIADO
+                    localStorage.removeItem('ximenaSelectedEmoji');
                 }
                 reader.readAsDataURL(file);
             }
@@ -550,17 +558,7 @@
 
         // Cargar al iniciar
         window.addEventListener('load', function() {
-            // Primero intentar cargar imagen
-            const savedFace = localStorage.getItem('ximenaFace');  // ← CAMBIADO
-            if (savedFace) {
-                customFace.innerHTML = `<img src="${savedFace}" alt="Ximena">`;
-            } else {
-                // Si no hay imagen, cargar emoji guardado
-                const savedEmoji = localStorage.getItem('ximenaSelectedEmoji') || '👩🏻🥷🏻';  // ← CAMBIADO
-                customFace.innerHTML = `<div class="default-face">${savedEmoji}</div>`;
-            }
-            
-            // Cargar datos de Firebase
+            // Cargar datos de Firebase (incluye emoji)
             loadFromDatabase();
         });
 
